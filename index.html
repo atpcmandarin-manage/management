@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>校務管理系統</title>
+<!-- 資料存放於 Google 試算表（Apps Script 網頁應用程式）；請在 script 內的 API 常數填入部署網址 -->
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f3f3;--pn:#fff;--ink:#222;--mut:#666;--ln:#d0d0d0;--ac:#a4373a;--hd:#e9e4e4;--sl:#f6dede}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1d1d1f;--pn:#2a2a2d;--ink:#eee;--mut:#aaa;--ln:#444;--ac:#e07477;--hd:#38383c;--sl:#4a2f30}}
+:root[data-theme=dark]{--bg:#1d1d1f;--pn:#2a2a2d;--ink:#eee;--mut:#aaa;--ln:#444;--ac:#e07477;--hd:#38383c;--sl:#4a2f30}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;display:flex;flex-direction:column;min-height:100vh}
+nav{background:var(--pn);border-bottom:1px solid var(--ln);padding:8px 16px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--mut)}
+
+nav button{border:0;background:none;color:var(--ac);padding:3px 8px;border-radius:4px;cursor:pointer;font:inherit}
+nav button:hover{background:var(--hd)}
+main{flex:1;min-width:0;padding:12px 16px}
+.tb{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}.tb h2{font-size:17px;margin:0 8px 0 0}
+button.b,select,input,textarea{font:inherit;color:inherit;background:var(--pn);border:1px solid var(--ln);border-radius:4px;padding:4px 8px}
+button.b{cursor:pointer}button.b:hover{background:var(--hd)}button.p{background:var(--ac);color:#fff;border-color:var(--ac)}button.d{color:var(--ac)}
+.badge{margin-left:auto;font-size:12px;color:var(--mut)}
+.sheet{overflow:auto;border:1px solid var(--ln);background:var(--pn);max-height:calc(100vh - 110px)}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--ln);padding:4px 8px;white-space:nowrap;text-align:left}
+th{background:var(--hd);position:sticky;top:0}tbody tr{cursor:pointer}tbody tr.on{background:var(--sl)}
+.ov{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:12px;z-index:9}
+.mo{background:var(--pn);border-radius:8px;width:min(720px,100%);max-height:92vh;overflow:auto;padding:16px}
+.mo h3{margin:0 0 10px}.mo h4{grid-column:1/-1;margin:8px 0 0;color:var(--ac);border-bottom:1px solid var(--ln)}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 12px}
+.g label{display:flex;flex-direction:column;font-size:12px;color:var(--mut)}.g label.w{grid-column:1/-1}.g input,.g select,.g textarea{color:var(--ink);font-size:14px;width:100%}
+.ft{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.rp{background:var(--pn);padding:18px;border:1px solid var(--ln)}.rp h2{text-align:center;margin:0 0 6px}.hd{display:flex;gap:18px;justify-content:center;margin-bottom:10px;flex-wrap:wrap}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ac);color:#fff;padding:6px 14px;border-radius:6px;display:none;z-index:10}
+.home{max-width:900px;margin:0 auto;text-align:center;padding:clamp(24px,9vh,80px) 8px}
+.home .ch{color:var(--ac);font-size:clamp(15px,3vw,19px);letter-spacing:.12em;margin:0;font-weight:600}
+.home h1{font-size:clamp(28px,6vw,44px);margin:8px 0 36px;letter-spacing:.06em}
+.cards{display:flex;justify-content:center;gap:14px;flex-wrap:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.card{font:inherit;background:var(--pn);color:var(--ink);border:1px solid var(--ln);border-top:5px solid var(--ac);border-radius:12px;padding:34px 12px;font-size:22px;letter-spacing:.1em;cursor:pointer;box-shadow:0 1px 4px #0002;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-4px);box-shadow:0 8px 18px #0003}
+.card i{display:block;font-style:normal;font-size:38px;margin-bottom:10px}
+.chips .card{padding:20px 28px;font-size:18px;min-width:140px}
+.cards .card{padding:14px 22px;font-size:20px;border-top-width:4px;box-shadow:0 1px 3px #0002}.cards .card i{display:none}
+@media(max-width:700px){.cards{gap:8px}.cards .card{padding:10px 12px;font-size:16px;letter-spacing:.04em}}
+@media print{nav,.tb{display:none}body{display:block;background:#fff}main{padding:0}.rp{border:0;color:#000}th{position:static}}
+</style></head><body>
+<nav id="nav"></nav><main id="mn"></main><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CO=new Intl.Collator('zh-Hant',{numeric:true}).compare,YR=[];for(let i=2010;i<=2500;i++)YR.push(i);
+const GR=[...Array(13)].map((_,i)=>'year'+(i+1)).concat(['大一','大二','大三','大四','其它']);
+const CK=x=>[['year','參賽年度','y'],['cls','班級','c'],['name','姓名','n'],...x,['note','備註','a']];
+const GA=[['gaward','全球獎項','t'],['caward','教會獎項','t']];
+const T={
+students:{n:'學生',R:'cname',S:['cls','sid'],L:['year','sid','cls','cname','ename','sex','enroll'],F:[
+['year','年度','y','','基本資料'],['sid','學號','t'],['cls','班級','c'],['cname','中文姓名','t'],['ename','英文姓名','t'],['nick','英文稱呼','t'],['sex','性別','s',['男','女']],['birth','生日','d'],['nat','國籍','t'],['school','就讀學校(校名)','t'],['grade','年級','s',GR],['enroll','入學日期','d'],['ls','休學日期(起)','d'],['le','休學日期(訖)','d'],['stop','停學日期','d'],['note','備註','a'],
+['mc','母親中文姓名','t','','聯絡資料'],['me','母親英文姓名','t'],['fc','父親中文姓名','t'],['fe','父親英文姓名','t'],['addr','地址','t'],['t1','聯絡電話1','t'],['t2','聯絡電話2','t'],['m1','Email1','t'],['m2','Email2','t'],['note2','聯絡備註','a']]},
+teachers:{n:'教師',R:'cname',S:['tno'],L:['tno','cname','ename','hire','cyear','ccls','stop'],F:[
+['tno','編號','t'],['cname','中文姓名','t'],['ename','英文姓名','t'],['hire','初聘日期','d'],['ls','休課紀錄(起)','d'],['le','休課紀錄(訖)','d'],['stop','停聘日期','d'],['cyear','授課班級(年度)','y'],['ccls','授課班級(班級)','t'],['note','備註','a']]},
+classes:{n:'編班',R:'cls',S:['ord'],L:['ord','year','open','cls','teacher','ta'],F:[
+['ord','班次','t'],['year','年度','y'],['open','開班年度','y'],['cls','班級','t'],['teacher','教師','h'],['ta','助教','h']]},
+hardpen:{n:'硬筆字',R:'name',S:['cls','sid'],L:['year','cls','name','grp','award','caward'],F:CK([['grp','組別','s',['國小初級組','國小中級組','國小高級組','中學組','高中組']],['award','獎項','s',['特優獎','優選獎','佳作獎','入圍']],['caward','教會獎項','t']])},
+speech:{n:'口說爭霸賽',R:'name',S:['cls','sid'],L:['year','cls','name','grp','gaward','caward'],F:CK([['grp','組別','s',['基礎組','進階組']],...GA])},
+reading:{n:'閱讀大賽',R:'name',S:['cls','sid'],L:['year','cls','name','grp','gaward','caward'],F:CK([['grp','組別','s',['L1-L2組','L3-L4組','L5-L6組','L7組']],...GA])},
+diligence:{n:'勤學獎',R:'name',S:['cls','sid'],L:['year','cls','name','award'],F:CK([['award','獎項','s',['滿十年','滿十五年']]])},
+literacy:{n:'識字認證',R:'name',S:['cls','sid'],L:['year','cls','name','level'],F:CK([['level','等級','t']])},
+idiom:{n:'成語挑戰',R:'name',S:['cls','sid'],L:['year','cls','name','level'],F:CK([['level','等級','t']])}};
+const GRP=[['基本資料',['students','teachers','classes']],['參賽紀錄',['hardpen','speech','reading','diligence','literacy','idiom']]];
+const RC={hardpen:{c:[['grp','組別'],['cls','班級'],['name','姓名'],['award','獎項']],s:['grp','cls','sid','award']},
+speech:{c:[['grp','組別'],['cls','班級'],['name','姓名'],['gaward','獎項']],s:['grp','cls','sid','gaward']},
+reading:{c:[['grp','組別'],['cls','班級'],['name','姓名'],['gaward','獎項']],s:['grp','cls','sid','gaward']},
+diligence:{c:[['cls','班級'],['name','姓名'],['award','獎項']],s:['cls','sid']},
+literacy:{c:[['level','等級'],['cls','班級'],['name','姓名']],s:['level','cls','sid']},
+idiom:{c:[['level','等級'],['cls','班級'],['name','姓名']],s:['level','cls','sid']}};
+const REP=[['roster','班級名單'],['dil','勤學獎名單'],...['hardpen','speech','reading','literacy','idiom'].map(k=>[k,T[k].n+'參賽名單'])];
+let D={},DB=null,cur='students',Y=Math.min(2500,Math.max(2010,new Date().getFullYear())),sel=null,q='',rc='',onlyDil=false;
+Object.keys(T).forEach(k=>D[k]=[]);
+const toast=m=>{const e=$('#toast');e.textContent=m;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2400)};
+function ord(y,c){const x=D.classes.find(z=>z.year==y&&z.cls==c);return x?parseFloat(x.ord)||999:999}
+function sv(t,k,r){if(k=='cls')return ord(r.year,r.cls);if(k=='sid')return r.sid||'';const f=T[t].F.find(f=>f[0]==k);if(f&&f[3]&&f[2]=='s'){const i=f[3].indexOf(r[k]);return i<0?99:i}return r[k]||''}
+const cmpv=(t,k,a,b)=>{const x=sv(t,k,a),y=sv(t,k,b);return typeof x=='number'&&typeof y=='number'?x-y:CO(String(x),String(y))};
+function yrs(s){if(!s.enroll)return'';let a=new Date(s.enroll);if(s.ls&&s.le)a=new Date(+a+(new Date(s.le)-new Date(s.ls)));const n=new Date();let y=n.getFullYear()-a.getFullYear();if(n.getMonth()<a.getMonth()||(n.getMonth()==a.getMonth()&&n.getDate()<a.getDate()))y--;return Math.max(y,0)}
+const API='https://script.google.com/macros/s/AKfycbzNOjTS-QZEAy6wc6b7zbenAPOHZUhR0s8ga9qQ9wMwUFyIDzKlqeouWcGJurTBpXmS/exec';let PW='';try{PW=sessionStorage.getItem('pw')||''}catch(e){}
+const uid=()=>'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+async function api(a,p){const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a,pw:PW,...p})});const j=await r.json();if(!j.ok){if(j.err=='auth')login(j.msg);throw new Error(j.err)}return j}
+function login(m){if($('#pw'))return;const o=modal(`<h3>請輸入密碼</h3><p style="color:var(--ac)">${m||''}</p><input id="pw" type="password" style="width:100%"><div class="ft"><button class="b p" id="ok">進入</button></div>`);const enter=()=>{PW=$('#pw').value;try{sessionStorage.setItem('pw',PW)}catch(e){}o.close();load()};$('#ok').onclick=enter;$('#pw').onkeydown=e=>{if(e.key=='Enter')enter()};$('#pw').focus()}
+async function load(){if(API.includes('PASTE'))return toast('尚未設定 Apps Script 網址');toast('資料載入中…');try{const j=await api('list');Object.keys(T).forEach(k=>D[k]=j.data[k]||[]);draw();toast('已載入')}catch(e){if(e.message!='auth')toast('讀取失敗：'+e.message)}}
+const fail=e=>{if(e.message!='auth')toast('儲存失敗：'+e.message)};
+function persist(t,r,del){(del?api('del',{t,id:r.id}):api('save',{t,row:r})).catch(fail)}
+function persistMany(t,rows){api('saveMany',{t,rows}).catch(fail)}
+function put(t,r){if(!r.id)r.id=uid();const i=D[t].findIndex(x=>x.id==r.id);i<0?D[t].push(r):D[t][i]=r;persist(t,r)}
+function del(t,id){D[t]=D[t].filter(x=>x.id!=id);persist(t,{id},1)}
+const clsOpts=y=>D.classes.filter(c=>!y||c.year==y).map(c=>c.cls);
+const stuOpts=r=>D.students.filter(s=>s.year==r.year&&s.cls==r.cls).sort((a,b)=>CO(a.sid,b.sid)).map(s=>s.cname);
+function fld(f,v,r){const[k,l,t,o]=f;let h;
+if(t=='a')return`<label class="w">${l}<textarea id="f_${k}" rows="2">${esc(v)}</textarea></label>`;
+if(t=='t'||t=='d')h=`<input id="f_${k}" type="${t=='d'?'date':'text'}" value="${esc(v)}">`;
+else{const op=(t=='y'?YR:t=='s'?o:t=='c'?clsOpts(r.year):t=='h'?D.teachers.map(x=>x.cname):stuOpts(r)).map(String);
+h=`<select id="f_${k}"><option></option>${[...new Set(op.concat(v?[String(v)]:[]))].map(x=>`<option${x==v?' selected':''}>${esc(x)}</option>`).join('')}</select>`}
+return`<label>${l}${h}</label>`}
+function collect(t,r){const o={...r};T[t].F.forEach(f=>{const e=$('#f_'+f[0]);if(e)o[f[0]]=e.value.trim()});return o}
+function modal(h){const o=document.createElement('div');o.className='ov';o.innerHTML=`<div class="mo">${h}</div>`;document.body.appendChild(o);o.close=()=>o.remove();return o}
+function form(t,r){const T0=T[t];let o=$('.ov');if(!o)o=modal('');
+o.firstChild.innerHTML=`<h3>${r.id?'修改':'新增'}${T0.n}資料</h3><div class="g">${T0.F.map(f=>(f[4]?`<h4>${f[4]}</h4>`:'')+fld(f,r[f[0]]??'',r)).join('')}</div><div class="ft"><button class="b" id="x">取消</button><button class="b p" id="ok">儲存</button></div>`;
+o.onchange=e=>{if(e.target.id=='f_year'||e.target.id=='f_cls')form(t,collect(t,r))};
+$('#x').onclick=()=>o.close();
+$('#ok').onclick=()=>{const n=collect(t,r);if(!n[T0.R])return toast('請填寫必要欄位');
+if(n.name!==undefined){const s=D.students.find(s=>s.year==n.year&&s.cls==n.cls&&s.cname==n.name);n.sid=s?s.sid:''}
+put(t,n);sel=n.id;o.close();draw()}}
+function carry(t){const o=modal(`<h3>轉入新年度</h3><p>將 ${Y} 年度的${T[t].n}資料複製到新年度，之後可再逐筆修改。</p><label>新年度 <select id="ty">${YR.map(y=>`<option${y==Y+1?' selected':''}>${y}</option>`).join('')}</select></label><div class="ft"><button class="b" id="x">取消</button><button class="b p" id="ok">轉入</button></div>`);
+$('#x').onclick=()=>o.close();$('#ok').onclick=()=>{const ty=$('#ty').value;if(D[t].some(r=>r.year==ty)){o.close();return toast(ty+' 年度已有資料，未重複轉入')}
+const src=D[t].filter(r=>r.year==Y);const ns=src.map(r=>({...r,id:uid(),year:ty}));ns.forEach(n=>D[t].push(n));persistMany(t,ns);o.close();Y=+ty;toast('已轉入 '+src.length+' 筆');draw()}}
+function askDel(t,id){const o=modal(`<h3>刪除確認</h3><p>確定要刪除這筆資料嗎？此動作無法復原。</p><div class="ft"><button class="b" id="x">取消</button><button class="b p" id="ok">刪除</button></div>`);
+$('#x').onclick=()=>o.close();$('#ok').onclick=()=>{del(t,id);sel=null;o.close();draw()}}
+function exp(t){const F=T[t].F,c=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const b=new Blob(['\ufeff'+[F.map(f=>c(f[1])),...D[t].map(r=>F.map(f=>c(r[f[0]])))].map(x=>x.join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=T[t].n+'.csv';a.click()}
+const yearSel=()=>`年度 <select id="yy">${YR.map(y=>`<option${y==Y?' selected':''}>${y}</option>`).join('')}</select>`;
+function navOld(){$('#nav').innerHTML='<h1>校務管理系統</h1>'+GRP.map(([g,ks])=>`<h5>${g}</h5>`+ks.map(k=>`<button data-k="${k}" class="${cur==k?'on':''}">${T[k].n}</button>`).join('')).join('')+'<h5>表單列印</h5>'+REP.map(([k,n])=>`<button data-k="${k}" class="${cur==k?'on':''}">${n}</button>`).join('');
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{cur=b.dataset.k;sel=null;q='';draw()})}
+function drawTab(){const t=T[cur],hasY=t.F.some(f=>f[0]=='year');
+const rows=D[cur].filter(r=>(!hasY||r.year==Y)&&(!q||Object.values(r).join(' ').includes(q))).sort((a,b)=>t.S.reduce((c,k)=>c||cmpv(cur,k,a,b),0));
+const lab=k=>t.F.find(f=>f[0]==k)[1];
+$('#mn').innerHTML=`<div class="tb"><h2>${t.n}</h2>${hasY?yearSel():''}<input id="q" placeholder="搜尋" value="${esc(q)}" size="10"><button class="b p" id="add">＋ 新增</button><button class="b" id="ed">修改</button><button class="b d" id="rm">刪除</button>${cur=='students'||cur=='classes'?'<button class="b" id="cy">轉入新年度</button>':''}<button class="b" id="ex">匯出 CSV</button><span class="badge">Google 試算表｜${rows.length} 筆</span></div>
+<div class="sheet"><table><thead><tr>${t.L.map(k=>`<th>${lab(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr data-id="${r.id}" class="${r.id==sel?'on':''}">${t.L.map(k=>`<td>${esc(r[k])}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${t.L.length}">尚無資料，請按「新增」</td></tr>`}</tbody></table></div>`;
+if(hasY)$('#yy').onchange=e=>{Y=+e.target.value;draw()};
+$('#q').oninput=e=>{q=e.target.value;const p=e.target.selectionStart;drawTab();const n=$('#q');n.focus();n.setSelectionRange(p,p)};
+$('#add').onclick=()=>form(cur,hasY?{year:String(Y)}:{});
+const cr=()=>D[cur].find(r=>r.id==sel);$('#ed').onclick=()=>cr()?form(cur,cr()):toast('請先點選一筆資料');
+$('#rm').onclick=()=>cr()?askDel(cur,sel):toast('請先點選一筆資料');$('#ex').onclick=()=>exp(cur);
+if($('#cy'))$('#cy').onclick=()=>carry(cur);
+document.querySelectorAll('tbody tr[data-id]').forEach(tr=>{tr.onclick=()=>{sel=tr.dataset.id;document.querySelectorAll('tbody tr').forEach(x=>x.classList.toggle('on',x==tr))};tr.ondblclick=()=>form(cur,cr())})}
+function drawRep(){const tb=(h,rows)=>`<table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${h.length}">無資料</td></tr>`}</tbody></table>`;
+const ss=D.students.filter(s=>s.year==Y);let ctl=yearSel(),body='',title=REP.find(r=>r[0]==cur)[1];
+if(cur=='roster'){const cs=clsOpts(Y);if(!cs.includes(rc))rc=cs[0]||'';ctl+=` 班級 <select id="rc">${cs.map(c=>`<option${c==rc?' selected':''}>${esc(c)}</option>`).join('')}</select>`;
+const c=D.classes.find(c=>c.year==Y&&c.cls==rc)||{};const L=ss.filter(s=>s.cls==rc).sort((a,b)=>CO(a.sid,b.sid));
+body=`<div class="hd"><span>年度：${Y}</span><span>班級：${esc(rc)}</span><span>教師：${esc(c.teacher)}</span><span>助教：${esc(c.ta)}</span></div>`+tb(['編號','中文姓名','英文稱呼','性別','就讀學校(年級)','入學日期','就學紀錄(年)'],L.map((s,i)=>[i+1,s.cname,s.nick,s.sex,(s.school||'')+(s.grade?'('+s.grade+')':''),s.enroll,yrs(s)]))}
+else if(cur=='dil'){ctl+=` <label><input type="checkbox" id="od"${onlyDil?' checked':''}> 只顯示滿十年以上</label>`;
+const L=ss.filter(s=>!onlyDil||yrs(s)>=10).sort((a,b)=>ord(Y,a.cls)-ord(Y,b.cls)||CO(a.sid,b.sid));body=tb(['年度','班級','姓名','就學年數'],L.map(s=>[Y,s.cls,s.cname,yrs(s)]))}
+else{const rc2=RC[cur],L=D[cur].filter(r=>r.year==Y).sort((a,b)=>rc2.s.reduce((c,k)=>c||cmpv(cur,k,a,b),0));
+body=`<div class="hd"><span>參賽年度：${Y}</span></div>`+tb(rc2.c.map(c=>c[1]),L.map(r=>rc2.c.map(c=>r[c[0]])))}
+$('#mn').innerHTML=`<div class="tb"><h2>${title}</h2>${ctl}<button class="b p" onclick="window.print()">列印</button></div><div class="rp"><h2>${title}</h2>${body}</div>`;
+$('#yy').onchange=e=>{Y=+e.target.value;draw()};if($('#rc'))$('#rc').onchange=e=>{rc=e.target.value;draw()};if($('#od'))$('#od').onchange=e=>{onlyDil=e.target.checked;draw()}}
+let scr='home',grp=0;
+const MENU=[['基本資料','📋',['students','teachers','classes']],['參賽紀錄','🏆',['hardpen','speech','reading','diligence','literacy','idiom']],['表單列印','🖨️',REP.map(r=>r[0])]];
+const nm=k=>T[k]?T[k].n:REP.find(r=>r[0]==k)[1],CH='奧克蘭臺灣基督長老教會中文班';
+function go(s,g,k){scr=s;if(g!=null)grp=g;if(k){cur=k;sel=null;q=''}draw()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;const[s,g,k]=b.dataset.go.split(',');go(s,g===undefined||g===''?null:+g,k||null)});
+function nav(){const m=MENU[grp],n=$('#nav');n.style.display=scr=='home'?'none':'flex';n.innerHTML=scr=='home'?'':`<button data-go="home">🏫 首頁</button>›<button data-go="sub,${grp}">${m[0]}</button>`+(scr=='page'?`›<span>${nm(cur)}</span>`:'')}
+function draw(){nav();const mn=$('#mn');
+if(scr=='home')mn.innerHTML=`<div class="home"><p class="ch">${CH}</p><h1>校務管理系統</h1><div class="cards">${MENU.map((m,i)=>`<button class="card" data-go="sub,${i}"><i>${m[1]}</i>${m[0]}</button>`).join('')}</div></div>`;
+else if(scr=='sub'){const m=MENU[grp];mn.innerHTML=`<div class="home"><p class="ch">${CH}</p><h1>${m[0]}</h1><div class="chips">${m[2].map((k,i)=>(grp==2&&i==1?'<span style="flex-basis:100%"></span>':'')+`<button class="card" data-go="page,,${k}">${nm(k)}</button>`).join('')}</div></div>`}
+else T[cur]?drawTab():drawRep()}
+draw();
+PW?load():login();
+</script></body></html>
